@@ -1,0 +1,32 @@
+{
+    "short_name": "In forma",
+    "name": "In forma",
+    "start_url": "index.html",
+    "icons": [
+      {
+        "src": "img/icon-mask.png",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "maskable"
+      },
+      {
+        "src": "img/icon-512.png",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "any"
+      }
+    ],
+    "display_override": ["window-controls-overlay"],
+    "background_color": "#eae1c0",
+    "display": "standalone",
+    "orientation": "portrait",
+    "launch_handler": {
+      "client_mode": "auto"
+    },
+    "scope": "/",
+    "theme_color": "#eae1c0",
+    "prefer_related_applications": false,
+    "description": "Indovina la forma con i comando vocali",
+    "dir": "ltr",
+    "lang": "it"
+}

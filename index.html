@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Ti senti in forma?</title>
+    <meta name="theme-color" content="#eae1c0">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="img/favicon.png" type="image/png">
+    <link href="https://fonts.googleapis.com/css2?&family=Permanent+Marker&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #090;
+            --secondary: #f6ffa1;
+             /* white */
+            --primary-light: #f00;
+            --secondary-light: #0f0;
+            --blue: #0170b7;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: Permanent Marker, sans-serif;
+            user-select: none;
+        }
+
+        a, button {
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #wrapper {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+        .player {
+            flex: 1;
+            align-items: center;
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: cover;
+        }
+
+        .player::after {
+            content: '';
+            position: absolute;
+            z-index: 2;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            transition: background 0.5s;
+        }
+
+        .player.active::after {
+
+            /* spotlight */
+            background: radial-gradient(circle, rgba(0,0,0,0) 0%, rgba(0,0,0,0.2) 60%, rgba(0,0,0,0.8) 100%);
+        }
+
+        .player.winner {
+            background: radial-gradient(circle,rgb(255, 128, 128) 0%, rgb(128, 128, 255) 100%);
+            transform: none !important;
+            width: 100% !important;
+            height: 100% !important;
+            position: absolute;
+            top: 0 !important;
+            left: 0 !important;
+            z-index: 100;
+        }
+
+        .player.winner::after {
+            content: '🏆';
+            font-size: 5em;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: transparent;
+            transform: none !important;
+            height: 100% !important;
+            width: 100% !important;
+        }
+
+        .player.winner .score {
+            display: none;
+        }
+
+        .player.winner .name {
+            width: 100px;
+            height: 100px;
+            line-height: 100px;
+            font-size: 3em;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .field {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .fullscreen {
+            background-image: url(img/quadretti.png);
+            background-size: 600px;
+            background-position: center -22px; /* -22px per centrare il pattern */
+            height: 100%;
+            width: 100%;
+            max-width: 600px;
+            position: relative;
+        }
+
+
+        #board #btn-reset {
+            position: absolute;
+            z-index: 10;
+            bottom: 10px;
+            right: 10px;
+        }
+        
+
+
+/* 1 player */
+        #board[data-n="1"] .player:nth-child(n+2) {
+            display: none;
+        }
+
+        #board[data-n="1"] .player {
+            width: 100%;
+            height: 100%;
+        }
+
+
+/* 2 players */
+        #board[data-n="2"] .player:nth-child(n+3) {
+            display: none;
+        }
+
+        #board[data-n="2"] .player {
+            height: 50%;
+        }
+
+        #board[data-n="2"] .player:nth-child(1) {
+            transform: rotate(180deg);
+            border-top: 2px solid #edbec5;
+        }
+
+/* 3 players */
+        #board[data-n="3"] .player:nth-child(n+4) {
+            display: none;
+        }
+
+        #board[data-n="3"] .player:nth-child(1) {
+            height: 33dvh;
+            transform: rotate(180deg);
+            border-top: 2px solid #edbec5;
+
+        }
+
+        #board[data-n="3"] .player:nth-child(2), #board[data-n="3"] .player:nth-child(3) {
+            height: 50vw;
+            width: 67dvh;
+        }
+
+        #board[data-n="3"] .player:nth-child(2) {
+            transform: rotate(-90deg);
+            position: absolute;
+            top: 33dvh;
+            right: 50vw;
+            transform-origin: top right;
+            border-top: 2px solid #edbec5;
+        }
+
+        #board[data-n="3"] .player:nth-child(3) {
+            transform: rotate(90deg);
+            position: absolute;
+            top: 33dvh;
+            left: 50vw;
+            transform-origin: top left;
+        }
+
+/* 4 players */
+        #board[data-n="4"] .player {
+            height: 50vw;
+            width: 50dvh;
+            position: absolute;
+        }
+        #board[data-n="4"] .player:nth-child(1) {
+            bottom: 50dvh;
+            left: 0;
+            transform: rotate(90deg);
+            transform-origin: bottom left;
+            border-top: 2px solid #edbec5;
+            border-left: 2px solid #edbec5;
+
+        }
+        #board[data-n="4"] .player:nth-child(2) {
+            top: 0;
+            left: 50vw;
+            transform: rotate(90deg);
+            transform-origin: top left;
+        }
+        #board[data-n="4"] .player:nth-child(3) {
+            top: 0;
+            right: 50vw;
+            transform: rotate(-90deg);
+            transform-origin: top right;
+            border-top: 2px solid #edbec5;
+            border-left: 2px solid #edbec5;
+        }
+        #board[data-n="4"] .player:nth-child(4) {
+            bottom: 50dvh;
+            right: 0;
+            transform: rotate(-90deg);
+            transform-origin: bottom right;
+        }
+
+
+   
+        .shape {
+            margin: 10px;
+            transition: all 0.5s;
+            background-size: 70%;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-color: currentColor;
+            flex-shrink: 0;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            margin-left: -10vw;
+            margin-top: -10vw;
+            width: 20vw;
+            aspect-ratio: 1;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+
+        .score {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: var(--blue);
+            font-size: 2em;
+        }
+
+        .player .name {
+            position: absolute;
+            z-index: 1;
+            top: 10px;
+            left: 10px;
+            font-size: 1em;
+            width: 30px;
+            text-align: center;
+            height: 30px;
+            line-height: 30px;
+            background-color: #000;
+            color: #fff;
+            border-radius: 50%;
+        }
+
+        .player.active .name, .player.active .score {
+            z-index: 5;
+        }
+
+        .player.active .score {
+            color: #e6e600;
+        }
+
+
+        /* caratteristiche booleane */
+
+        .field.circle .shape {
+            border-radius: 50%;
+        }
+        .field.square .shape {
+            border-radius: 0;
+        }
+
+        .field.small .shape {
+            width: 20vw;
+        }
+        .field.large .shape {
+            width: 40vw;
+            margin-left: -20vw;
+            margin-top: -20vw;
+        }
+
+
+        #board[data-n="3"] .field.small .shape, #board[data-n="4"] .field.small .shape {
+            width: 10vw;
+            margin-left: -5vw;
+            margin-top: -5vw;
+        }
+
+        #board[data-n="3"] .field.large .shape, #board[data-n="4"] .field.large .shape {
+            width: 20vw;
+            margin-left: -10vw;
+            margin-top: -10vw;
+        }
+
+        .field.white .shape {
+            color: #fff;
+        }
+        .field.black .shape {
+            color: #000;
+        }
+
+        .field.filled .shape {
+            background-color: currentColor;
+        }
+        .field.outlined .shape {
+            border: 2vw solid;
+            background-color: transparent;
+        }
+
+
+        .field.shadow .shape {
+            box-shadow: 10px 10px 10px rgba(0, 0, 0, 0.5);
+        }
+        .field.no-shadow .shape {
+            box-shadow: none;
+        }
+
+
+        .field.deformed .shape {
+            transform: skew(-20deg, -20deg);
+        }
+
+        .field.blurred .shape {
+            filter: blur(2px);
+        }
+
+        .field.dirty .shape {
+            background-image: url('img/cacca.png');
+        }
+
+        .field.top .shape {
+            top: 0;
+            margin-top: 1vw;
+        }
+        .field.bottom .shape {
+            top: 100%;
+            margin-top: -21vw;
+        }
+        .field.bottom.large .shape {
+            margin-top: -41vw;
+        }
+
+
+
+        .field.left .shape {
+            left: 0;
+            margin-left: 1vw;
+        }
+        .field.right .shape {
+            left: 100%;
+            margin-left: -21vw;
+        }
+        .field.right.large .shape {
+            margin-left: -41vw;
+        }
+
+        #board[data-n="3"] .field.right .shape, #board[data-n="4"] .field.right .shape {
+            margin-left: -11vw;
+        }
+        #board[data-n="3"] .field.right.large .shape, #board[data-n="4"] .field.right.large .shape {
+            margin-left: -21vw;
+        }
+        #board[data-n="3"] .field.left .shape, #board[data-n="4"] .field.left .shape {
+            margin-left: 1vw;
+        }
+        #board[data-n="3"] .field.bottom .shape, #board[data-n="4"] .field.bottom .shape {
+            margin-top: -11vw;
+        }
+        #board[data-n="3"] .field.bottom.large .shape, #board[data-n="4"] .field.bottom.large .shape {
+            margin-top: -21vw;
+        }
+        #board[data-n="3"] .field.top .shape, #board[data-n="4"] .field.top .shape {
+            margin-top: 1vw;
+        }
+
+        .field.wet {
+            background-image: url('img/gocce.png');
+        }
+
+        .field.moving .shape {
+            animation: move 4s linear infinite;
+        }
+
+        .field.moving.deformed .shape {
+            animation: move-deformed 4s linear infinite;
+        }
+
+@keyframes move {
+    0% {
+        transform: translate(-20px, -20px);
+    }
+    25% {
+        transform: translate(20px, -20px);
+    }
+    50% {
+        transform: translate(20px, 20px);
+    }
+    75% {
+        transform: translate(-20px, 20px);
+    }
+    100% {
+        transform: translate(-20px, -20px);
+    }
+}
+
+@keyframes move-deformed {
+    0% {
+        transform: translate(-20px, -20px) skew(-20deg, -20deg);
+    }
+    25% {
+        transform: translate(20px, -20px) skew(-20deg, -20deg);
+    }
+    50% {
+        transform: translate(20px, 20px) skew(-20deg, -20deg);
+    }
+    75% {
+        transform: translate(-20px, 20px) skew(-20deg, -20deg);
+    }
+    100% {
+        transform: translate(-20px, -20px) skew(-20deg, -20deg);
+    }
+}
+
+#board {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+  
+  
+#players {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 1000;
+}
+
+
+#players button {
+    padding: 10px;
+    margin: 5px;
+    background-color: #ccc;
+    border: 1px solid #000;
+    cursor: pointer;
+}
+
+.number-selector {
+    text-align: center;
+    margin-bottom: 36px;
+    margin-top: 2px;
+    font-size: 0;
+}
+
+.number-selector a {
+    font-size: 18px;
+    padding: 5px;
+    margin: 4px;
+    width: 30px;
+    height: 30px;
+    border: none;
+    display: inline-block;
+    background-color: var(--secondary);
+    cursor: pointer;
+    border-radius: 5px;
+    color: #000;
+    text-decoration: none;
+    position: relative;
+}
+
+.number-selector a.unavailable {
+    background-color: #eee;
+    color: #999;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.number-selector a.selected:after {
+    content: 'X';
+    position: absolute;
+    font-size: 24px;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    color: var(--primary-light);
+}
+ 
+.btn {
+    font-family: inherit;
+    background-color: #fff;
+    border: none;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    padding: 10px 30px;
+    border-radius: 999px;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-size: 20px;
+    font-weight: bold;
+    color: var(--blue);
+    transition: transform 0.2s;
+    cursor: inherit;
+}
+
+.btn:active {
+    transform: scale(.9);
+}
+
+.btn:active::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 20%;
+    width: 60%;
+    height: 4px;
+    background-color: var(--primary-light);
+    transform: rotate(-10deg);
+}
+
+#btn-reset {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+}
+
+.btn-wrapper {
+    text-align: center;
+}
+
+.btn-wrapper:last-child {
+    position: absolute;
+    bottom: 30px;
+    left: 0;
+    width: 100%;
+}
+#btn-commands {
+    font-size: .8em;
+}
+
+
+
+#commands {
+    display: flex;
+    flex-direction: column;
+    background-image: url('img/righe.jpg'); 
+    background-position: left top;
+}
+
+.row {
+    display: flex;
+    justify-content: space-around;
+    flex: 1;
+    width: 100%;
+    border-bottom: 2px solid #edbec5;
+}
+
+.row:last-child {
+    border-bottom: none;
+}
+
+.row > div {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.row span {
+    padding: 10px;
+    border: 1px solid #000;
+}
+
+.row div:first-child span {
+    background-color: #000;
+    color: #fff;
+}
+
+.row div:last-child span {
+    background-color: #fff;
+}
+
+
+#intro {
+    padding: 20px;
+    cursor: url('img/pen-cursor.png') 0 128, auto;
+}
+
+#intro p {
+    margin-bottom: 38.5px;
+    font-size: 20px;
+    line-height: 38.5px;
+    height: 75px;
+}
+
+#intro p em {
+    color: var(--blue);
+}
+
+#intro h2 {
+    line-height: 38.5px;
+    margin: 0;
+    text-align: center;
+}
+
+#intro a {
+    cursor: inherit;
+}
+
+
+
+#comparse img {
+    max-height: 100vh;
+    max-width: 100%;
+    position: absolute;
+    z-index: 100;
+    left: 0;
+    inset: 0;
+    object-position: center;
+    object-fit: contain;
+    margin: auto auto 0;
+    transition: transform 1s;
+}
+
+#comparse #vitello {
+    transform: translateX(110vw)
+}
+
+#comparse #rocco {
+    transform: translateX(-110vw);
+}
+
+#comparse #gesu {
+    transform: translateY(-110vh);
+}
+
+#comparse img.show {
+    transform: translateX(0) !important;
+}
+
+#comparse #balloon {
+    border: 8px solid #000;
+    position: absolute;
+    z-index: 100;
+    background-color: #fff;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    max-width: 600px;
+    margin: auto auto 0;
+    width: 80%;
+    padding: 30px;
+    text-align: center;
+    border-radius: 50%;
+    font-size: 22px;
+    transform: translateY(100vh);
+    transition: transform 1s;
+    color: var(--blue);
+}
+
+#comparse #balloon.show {
+    transform: translateY(0) !important;
+}
+
+
+    </style>
+</head>
+<body>
+    <audio src="sounds/start.mp3"></audio>
+
+
+    <div id="wrapper">
+
+        <!-- tavolo da gioco per massimo 4 giocatori -->
+        <div id="board" data-n="2" class="fullscreen hidden">
+            <div class="player">
+                <div class="field">
+                    <div class="shape"></div>
+                </div>
+                <div class="name">A</div>
+                <span class="score">0</span>
+            </div>
+            <div class="player">
+                <div class="name">B</div>
+                <div class="field">
+                    <div class="shape"></div>
+                </div>
+                <span class="score">0</span>
+            </div>
+            <div class="player">
+                <div class="name">C</div>
+                <div class="field">
+                    <div class="shape"></div>
+                </div>
+                <span class="score">0</span>
+            </div>
+            <div class="player">
+                <div class="name">D</div>
+                <div class="field">
+                    <div class="shape"></div>
+                </div>
+                <span class="score">0</span>
+            </div>
+            <button class="btn" id="btn-reset">↺</button>
+        </div>
+
+        <!-- schermata iniziale -->
+        <div id="intro" class="fullscreen">
+            <p data-levels="1" class="hidden">Per vincere questo livello devi dire il colore che la tua forma <em>NON</em> ha.</p>
+            <p data-levels="2" class="hidden">All’inizio del gioco metà delle caratteristiche sono giuste.</p>
+            <p data-levels="3" class="hidden">Se dopo un comando il punteggio sale, sei sulla strada giusta.</p>
+            <p data-levels="4">La tua forma deve <em>sentire</em> i consigli giusti per trasformarsi.</p>
+            <p data-levels="5" class="hidden">Completa un livello per sbloccare quello successivo.</p>
+            <p data-levels="6" class="hidden">Se li dimentichi, puoi dire <em>comandi</em>, ma perderai il turno.</p>
+            <p data-levels="7" class="hidden">È vietato parlare quando non è il tuo turno.</p>
+            <p data-levels="8" class="hidden">Se bestemmi o insulti il telefono, sarai punito.</p>
+            <p data-levels="9" class="hidden">Ora ci sono caratteristiche con tre possibilità.</p>
+            <p data-levels="10" class="hidden">Sai che puoi giocare anche da computer?</p>
+            <p data-levels="11" class="hidden">Se guardi il codice sorgente, potresti scoprire dei comandi nascosti.</p>
+            <p data-levels="12" class="hidden">Sai che ci sono 2<sup>10</sup> &times; 3<sup>2</sup> = 9216 possibili combinazioni?</p>
+
+
+            <h2>Giocatori</h2>
+            <div id="players-select" class="number-selector">
+                <a href="#" data-n="1">1</a>
+                <a href="#" data-n="2" class="selected">2</a>
+                <a href="#" data-n="3">3</a>
+                <a href="#" data-n="4">4</a>
+            </div>
+                
+
+            <h2>Livello</h2>
+            <div class="number-selector" id="level-select">
+                <a href="#" data-level="1">1</a>
+                <a href="#" data-level="2">2</a>
+                <a href="#" data-level="3">3</a>
+                <a href="#" data-level="4" class="selected">4</a>
+                <a href="#" data-level="5" class="unavailable">5</a>
+                <a href="#" data-level="6" class="unavailable">6</a><br>
+                <a href="#" data-level="7" class="unavailable">7</a>
+                <a href="#" data-level="8" class="unavailable">8</a>
+                <a href="#" data-level="9" class="unavailable">9</a>
+                <a href="#" data-level="10" class="unavailable">10</a>
+                <a href="#" data-level="11" class="unavailable">11</a>
+                <a href="#" data-level="12" class="unavailable">12</a>
+            </div>
+
+
+            <div class="btn-wrapper"><button class="btn" id="btn-start">Gioca</button></div>
+
+
+            <div class="btn-wrapper"><button class="btn" id="btn-commands">Mostrami un po’ i comandi</button></div>
+        </div>
+
+        <!-- comandi vocali -->
+        <div id="commands" class="fullscreen hidden">
+   
+
+            <div class="row">
+                <div><span>nero</span></div>
+                <div><span>bianco</span></div>
+            </div>
+            <div class="row">
+                <div><span>quadrato</span></div>
+                <div><span>rotondo</span></div>
+            </div>
+            <div class="row">
+                <div><span>piccolo</span></div>
+                <div><span>grande</span></div>
+            </div>
+            <div class="row">
+                <div><span>pieno</span></div>
+                <div><span>vuoto</span></div>
+            </div>
+            <div class="row">
+                <div><span>dritto</span></div>
+                <div><span>storto</span></div>
+            </div>
+            <div class="row">
+                <div><span>piatto</span></div>
+                <div><span>ombreggiato</span></div>
+            </div>
+            <div class="row hidden">
+                <div><span>nitido</span></div>
+                <div><span>sfocato</span></div>
+            </div>
+            <div class="row">
+                <div><span>pulito</span></div>
+                <div><span>sporco</span></div>
+            </div>
+            <div class="row">
+                <div><span>destra</span></div>
+                <div><span>centro</span></div>
+                <div><span>sinistra</span></div>
+            </div>
+            <div class="row">
+                <div><span>alto</span></div>
+                <div><span>mezzo</span></div>
+                <div><span>basso</span></div>
+            </div>
+            <div class="row">
+                <div><span>asciutto</span></div>
+                <div><span>bagnato</span></div>
+            </div>
+            <div class="row">
+                <div><span>fisso</span></div>
+                <div><span>mobile</span></div>
+            </div>
+        </div>
+
+
+        <div id="comparse">
+            <img src="img/vacca.png" alt="" id="vitello">
+            <img src="img/rocco.png" alt="" id="rocco">
+            <img src="img/gesu.png" alt="" id="gesu">
+            <div id="balloon">Sei un coglione anche tu!</div>
+        </div>
+    </div>
+
+
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/annyang/2.6.0/annyang.min.js"></script> -->
+    <script src="annyang.min.js"></script>
+
+
+    <script>
+
+
+FEATURES = {
+    color: ['white', 'black'],
+    shape: ['circle', 'square'],
+    size: ['small', 'large'],
+    border: ['filled', 'outlined'],
+    deformation: ['deformed', 'no-deformed'],
+    shadow: ['shadow', 'no-shadow'],
+    sharpeness: ['sharp', 'blurred'],
+    cleanliness: ['clean', 'dirty'],
+    alignment: ['left', 'center', 'right'],
+    justification: ['top', 'middle', 'bottom'],
+    humidity: ['dry', 'wet'],
+    movement: ['stopped', 'moving'],
+}
+
+LEVELS_ORDER = ['color', 'shape', 'size', 'border', 'deformation', 'shadow', 'sharpeness', 'cleanliness', 'alignment', 'justification', 'humidity', 'movement']
+
+let activePlayer = 1
+let numPlayers = 2
+let currentLevel = 4
+let targetClasses = []
+
+let maxLevel = parseInt(localStorage.getItem('maxLevel') || 4)
+const audio = document.querySelector('audio')
+
+function initShapes() {
+
+    targetClasses = []
+
+    // Classi vincenti, da assegnare alla forma da indovinare
+    for (let i = 0; i < currentLevel; i++) {
+        let feature = LEVELS_ORDER[i]
+        let values = FEATURES[feature]
+        let value = values[Math.floor(Math.random() * values.length)]
+        targetClasses.push(value)
+    }
+
+    // Imposto per ogni giocatore metà delle classi vincenti (arrotondando per difetto)
+
+    document.querySelectorAll('.player .field').forEach(field => {
+        field.className = 'field'
+        const shuffled = [...LEVELS_ORDER].slice(0, currentLevel).sort(() => 0.5 - Math.random())
+
+        const featuresToChange = shuffled.slice(0, Math.ceil(currentLevel / 2))
+        for (let i = 0; i < currentLevel; i++) {
+            let feature = LEVELS_ORDER[i]
+            let value = targetClasses[i]
+            if (featuresToChange.includes(feature)) {
+                availableValues = FEATURES[feature].filter(v => v !== value)
+                value = availableValues[Math.floor(Math.random() * availableValues.length)]
+            }
+            field.classList.add(value)
+        }
+    })
+
+    document.querySelectorAll('.player .field').forEach(shape => {
+        calculateScore(shape)
+    })
+}
+
+
+function initAvailableLevels() {
+    document.querySelectorAll('#level-select a').forEach(a => {
+        let level = parseInt(a.dataset.level)
+        if (level > maxLevel) {
+            a.classList.add('unavailable')
+        } else {
+            a.classList.remove('unavailable')
+        }
+    })
+}
+
+initAvailableLevels()
+
+document.querySelectorAll('#players button').forEach((button, index) => {
+    button.addEventListener('click', () => {
+        document.getElementById('board').dataset.n = index + 1  
+    })
+})  
+
+
+function calculateScore(shape) {
+    let classes = Array.from(shape.classList)
+    let classesGuessed = 0
+    classes.forEach(cl => {
+        if (targetClasses.includes(cl)) {
+            classesGuessed++
+        }
+    })
+    const score = (classesGuessed / currentLevel * 100).toFixed(0)
+    shape.closest('.player').querySelector('.score').textContent = score
+    return score
+}
+
+if (annyang) {
+    const commands = {
+        
+
+        'piccolo': function() {
+            setClasses('small', 'large')
+        },
+        'grande': function() {
+            setClasses('large', 'small')
+        },
+        'bianco': function() {
+            setClasses('white', 'black')
+        },
+        'nero': function() {
+            setClasses('black', 'white')
+        },
+        'rotondo': function() {
+            setClasses('circle', 'square')
+        },
+        // accetto anche "cerchio"
+        'cerchio': function() {
+            setClasses('circle', 'square')
+        },
+        'quadrato': function() {
+            setClasses('square', 'circle')
+        },
+        'pieno': function() {
+            setClasses('filled', 'outlined')
+        },
+        'vuoto': function() {
+            setClasses('outlined', 'filled')
+        },
+        'ombreggiato': function() {
+            setClasses('shadow', 'no-shadow')
+        },
+        'piatto': function() {
+            setClasses('no-shadow', 'shadow')
+        },
+        'storto': function() {
+            setClasses('deformed', 'no-deformed')
+        },
+        'dritto': function() {
+            setClasses('no-deformed', 'deformed')
+        },
+        'nitido': function() {
+            setClasses('sharp', 'blurred')
+        },
+        'sfocato': function() {
+            setClasses('blurred', 'sharp')
+        },
+        'pulito': function() {
+            setClasses('clean', 'dirty')
+        },
+        'sporco': function() {
+            setClasses('dirty', 'clean')
+        },
+        'destra': function() {
+            setClasses('right', 'left center')
+        },
+        'centro': function() {
+            setClasses('center', 'left right')
+        },
+        'sinistra': function() {
+            setClasses('left', 'right center')
+        },
+        'alto': function() {
+            setClasses('top', 'bottom middle')
+        },
+        'mezzo': function() {
+            setClasses('middle', 'top bottom')
+        },
+        'basso': function() {
+            setClasses('bottom', 'top middle')
+        },
+        'asciutto': function() {
+            setClasses('dry', 'wet')
+        },
+        'bagnato': function() {
+            setClasses('wet', 'dry')
+        },
+        'fisso': function() {
+            setClasses('stopped', 'moving')
+        },
+        'mobile': function() {
+            setClasses('moving', 'stopped')
+        },
+
+        // visualizzo i comandi
+        'comandi': function() {
+            showCommands(false)
+        },
+
+
+        // Comandi nascosti
+
+        'to mare vacca': {regexp: /(vacca|mad?re).+(vacca|mad?re)/, callback: function() {
+            document.getElementById('vitello').classList.add('show')
+            setTimeout(() => {
+                document.getElementById('vitello').classList.remove('show')
+            }, 5000)
+        }},
+
+        // Non si può scrivere figa, c'è il filtro, viene restituito f***
+        'va in mona': {regexp: /va in (mona|f\*\*\*)/, callback:  function() {
+            document.getElementById('rocco').classList.add('show')
+            setTimeout(() => {
+                document.getElementById('rocco').classList.remove('show')
+            }, 5000)
+        }},
+        'sei *insulto': function(insult) {
+            document.getElementById('balloon').textContent = 'Io non sono ' + insult + ', ma tu sì!'
+            document.getElementById('balloon').classList.add('show')
+            setTimeout(() => {
+                document.getElementById('balloon').classList.remove('show')
+            }, 5000)
+        },
+        'Porcone': {regexp: /Dio/, callback: function() {
+            document.getElementById('gesu').classList.add('show')
+            setTimeout(() => {
+                document.getElementById('gesu').classList.remove('show')
+            }, 5000)
+        }},
+        
+    }
+    annyang.setLanguage('it-IT')
+    annyang.addCommands(commands)
+
+    document.querySelector('.player:nth-child(' + activePlayer + ')').classList.add('active')
+
+    annyang.addCallback('errorNetwork', function() {
+        alert('Errore di rete')
+    })
+
+    annyang.addCallback('resultMatch', function(userSaid, commandText, phrases) {
+
+        const shape = document.querySelector('.player.active .field')
+        const score = calculateScore(shape)
+
+        if (score == 100) {
+            annyang.abort()
+            player = shape.closest('.player')
+            player.classList.add('winner')
+            audio.src = 'sounds/victory' + activePlayer + '.mp3'
+            audio.currentTime = 0
+            audio.play()
+            if (currentLevel == maxLevel && currentLevel < Object.keys(FEATURES).length) {
+                maxLevel++
+                localStorage.setItem('maxLevel', maxLevel)
+                initAvailableLevels()
+
+                // Invio al server il livello raggiunto per aver traccia nei log
+                if ('sendBeacon' in navigator) {
+                    navigator.sendBeacon('?level='+ currentLevel)
+                }
+            }
+ 
+
+            setTimeout(() => {
+                player.classList.remove('winner')
+                document.getElementById('board').classList.add('hidden')
+                document.getElementById('intro').classList.remove('hidden')
+                audio.src = 'sounds/start.mp3'
+            }, 5000)
+        }
+
+        activePlayer++
+        if (activePlayer > numPlayers) {
+            activePlayer = 1
+        }
+
+        setTimeout(() => {
+            document.querySelectorAll('.player').forEach(player => {
+                player.classList.remove('active')
+            })
+            document.querySelector('.player:nth-child(' + activePlayer + ')').classList.add('active')
+        }, 1000)
+
+    })
+
+}
+
+
+function setClasses(classToAdd, classToRemove) {
+    // Cambio solo al giocatore attivo
+    let shape = document.querySelector('.player.active .field')
+    shape.classList.add(classToAdd)
+    shape.classList.remove(...classToRemove.split(' '))
+}
+
+
+document.getElementById('btn-start').addEventListener('click', () => {
+   
+    initShapes()
+
+    document.getElementById('intro').classList.add('hidden')
+    document.getElementById('board').classList.remove('hidden')
+    audio.currentTime = 0
+    audio.play()
+    setTimeout(() => {
+        annyang.start({ autoRestart: true, continuous: true })
+    }, 2000)
+
+})
+
+document.getElementById('btn-commands').addEventListener('click', showCommands)
+
+function showCommands(returnToIntro = true) {
+
+    const cameFrom = returnToIntro ? 'intro' : 'board'
+    document.getElementById(cameFrom).classList.add('hidden')
+    document.querySelectorAll('#commands .row').forEach(row => {
+        row.classList.remove('hidden')
+    })
+    document.querySelectorAll('#commands .row:nth-child(n+' + (currentLevel + 1) + ')').forEach(row => {
+        row.classList.add('hidden')
+    })
+    document.getElementById('commands').classList.remove('hidden')
+    setTimeout(() => {
+        document.getElementById('commands').classList.add('hidden')
+        document.getElementById(cameFrom).classList.remove('hidden')
+    }, 5000)
+}
+
+
+document.querySelectorAll('#level-select a').forEach(a => {
+    a.addEventListener('click', (e) => {
+        e.preventDefault()
+        document.querySelectorAll('#level-select a').forEach(a => {
+            a.classList.remove('selected')
+        })
+        a.classList.add('selected')
+        document.querySelectorAll('#intro p').forEach(p => {
+            p.classList.add('hidden')
+        })
+        document.querySelectorAll('#intro p[data-levels~="' + a.dataset.level + '"]').forEach(p => {
+            p.classList.remove('hidden')
+        })
+        currentLevel = parseInt(a.dataset.level)
+    })
+})
+
+document.querySelectorAll('#players-select a').forEach(a => {
+    a.addEventListener('click', (e) => {
+        e.preventDefault()
+        document.querySelectorAll('#players-select a').forEach(a => {
+            a.classList.remove('selected')
+        })
+        a.classList.add('selected')
+        numPlayers = parseInt(a.dataset.n)
+        document.getElementById('board').dataset.n = numPlayers
+    })
+})
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+    document.getElementById('board').classList.add('hidden')
+    document.getElementById('intro').classList.remove('hidden')
+    annyang.abort()
+})
+
+
+
+    </script>
+</body>
+</html>
